@@ -22,61 +22,164 @@ class ConektaController(http.Controller):
         res = tx_obj.sudo().form_feedback(data, 'conekta')
         return res
 
+    def conekta_create_customer(self, customer_id, conekta_customer_data):
+        conekta_customer = conekta.Customer.create(conekta_customer_data)
+        _logger.debug('DEBUG CONEKTA CUSTOMER ID %s', conekta_customer)
+        _logger.debug('DEBUG CONEKTA CUSTOMER ID %s', type(conekta_customer))
+        if conekta_customer:
+            _logger.debug('DEBUG CONEKTA CUSTOMER ID %s',
+                          conekta_customer['id'])
+            ResPartner = request.env['res.partner']
+            ResPartner.browse(customer_id).write(
+                {'conekta_customer_id': conekta_customer['id']})
+            return conekta_customer['id']
+
+        return False
+
     def create_params(self, acquirer):
         so_id = request.session['sale_order_id']
         so = request.env['sale.order'].sudo().search([('id', '=', so_id)])
-        params = {}
-        params['description'] = _('%s Order %s' % (so.company_id.name,
-                                                   so.name))
-        params['amount'] = int(so.amount_total * 100)
-        params['currency'] = so.currency_id.name
-        params['reference_id'] = so.name
-        if acquirer == 'conekta':
-            params['card'] = request.session['conekta_token']
-        if acquirer == 'conekta_oxxo':
-            params['cash'] = {'type': 'oxxo'}
-            # TODO: ADD expires_at
-        details = params['details'] = {}
-        details['name'] = so.partner_id.name
-        details['phone'] = so.partner_id.phone
-        details['email'] = so.partner_id.email
-        customer = details['customer'] = {}
-        if request.session['uid'] is not None:
-            # TODO: "offline_payments" and "score"
-            create_at = so.partner_id.create_date
-            create_date = mktime(datetime.strptime(
-                create_at, '%Y-%m-%d %H:%M:%S').timetuple())
-            write_at = so.partner_id.write_date
-            updated_date = mktime(datetime.strptime(
-                write_at, '%Y-%m-%d %H:%M:%S').timetuple())
-            customer['logged_in'] = True
-            customer['successful_purchases'] = so.partner_id.sale_order_count
-            customer['created_at'] = str(create_date)
-            customer['updated_at'] = str(updated_date)
+        _logger.debug('DEBUG SALE ORDER %s', so)
+
+        if not so.partner_id.conekta_customer_id:
+            customer_data = dict()
+            customer_data['name'] = so.partner_id.name
+            customer_data['phone'] = so.partner_id.phone
+            customer_data['email'] = so.partner_id.email
+
+            customer_shipping_addresses = so.partner_id.child_ids.filtered(
+                lambda contact: contact.type == 'delivery'
+            )
+
+            if customer_shipping_addresses:
+                customer_data['shipping_contacts'] = list()
+
+                for delivery_address in customer_shipping_addresses:
+                    _logger.debug('DEBUG SHIPPING CONTACTS PHONE %s, %s',
+                                  delivery_address.phone, type(delivery_address.phone))
+
+                    customer_data['shipping_contacts'].append({
+                        "phone": delivery_address.phone,
+                        "receiver": delivery_address.name,
+                        "address": {
+                            "street1": delivery_address.street,
+                            "street2": delivery_address.street2,
+                            "city": delivery_address.city,
+                            "state": delivery_address.state_id,
+                            "country": delivery_address.country_id.code,
+                            "postal_code": delivery_address.zip,
+                        }
+                    })
+
+            customer_id = self.conekta_create_customer(
+                so.partner_id.id, customer_data)
+
         else:
-            customer['logged_in'] = False
-        line_items = details['line_items'] = []
+
+            customer_id = so.partner_id.conekta_customer_id
+
+        params = {}
+        params['customer_info'] = dict()
+        params['customer_info']['customer_id'] = customer_id
+        params['metadata'] = dict()
+        params['metadata']['description'] = _(
+            '%s Order %s' % (so.company_id.name, so.name)
+        )
+        params['metadata']['reference'] = so.name
+        _logger.debug('DEBUG CURRENCY SALE ORDER %s', so.currency_id.name)
+        params['currency'] = so.currency_id.name
+
+        params['line_items'] = []
         for order_line in so.order_line:
+
+            if order_line.is_delivery:
+                continue
+
             item = {}
-            line_items.append(item)
             item['name'] = order_line.product_id.name
-            item['description'] = order_line.product_id.description_sale
+            _logger.debug('DEBUG ITEM DESCRIPTION %s, %s', item[
+                          'name'], order_line.product_id.description_sale)
+
+            if order_line.product_id.description_sale:
+                item['description'] = order_line.product_id.description_sale
+
             item['unit_price'] = int(order_line.price_unit * 100)
-            item['quantity'] = order_line.product_uom_qty
+            item['quantity'] = int(order_line.product_uom_qty)
             item['sku'] = order_line.product_id.default_code
             item['category'] = order_line.product_id.categ_id.name
-        billing_address = details['billing_address'] = {}
-        billing_address['street1'] = so.partner_invoice_id.street
-        billing_address['street2'] = so.partner_invoice_id.street2
-        billing_address['city'] = so.partner_invoice_id.city
-        billing_address['state'] = so.partner_invoice_id.state_id.code
-        billing_address['zip'] = so.partner_invoice_id.zip
-        billing_address['country'] = so.partner_invoice_id.country_id.name
-        billing_address['tax_id'] = so.partner_invoice_id.vat
-        billing_address['company_name'] = (so.partner_invoice_id.parent_name or
-                                           so.partner_invoice_id.name)
-        billing_address['phone'] = so.partner_invoice_id.phone
-        billing_address['email'] = so.partner_invoice_id.email
+            params['line_items'].append(item)
+
+        shipping_lines = so.order_line.filtered(
+            lambda line: line.is_delivery)
+
+        if shipping_lines:
+
+            params['shipping_lines'] = list()
+
+            for shipping_line in shipping_lines:
+
+                params['shipping_lines'].append({
+                    'amount': int(shipping_line.price_unit * 100),
+                    'carrier': shipping_line.order_id.carrier_id.partner_id.name,
+                })
+
+        if so.partner_shipping_id:
+
+            params['shipping_contact'] = dict()
+            _logger.debug('DEBUG SHIPPING CONTACT PHONE %s, %s',
+                          so.partner_shipping_id.phone, type(so.partner_shipping_id.phone))
+
+            params['shipping_contact']["phone"] = so.partner_shipping_id.phone
+            _logger.debug('DEBUG SHIPPING CONTACT PHONE 2 %s, %s',
+                          params['shipping_contact']["phone"], type(params['shipping_contact']["phone"]))
+            _logger.debug('DEBUG RECEIVER %s', so.partner_shipping_id.name)
+            params['shipping_contact'][
+                "receiver"] = so.partner_shipping_id.name + ' test'
+            params['shipping_contact']['address'] = {
+                'street1': so.partner_shipping_id.street,
+                "street2": so.partner_shipping_id.street2,
+                'postal_code': so.partner_shipping_id.zip,
+                'country': so.partner_shipping_id.country_id.code,
+                "city": so.partner_shipping_id.city,
+                "state": so.partner_shipping_id.state_id.name,
+            }
+
+        taxes = so.mapped('order_line.tax_id')
+
+        if taxes:
+
+            AccountInvoiceTax = request.env['account.invoice.tax']
+            params['tax_lines'] = list()
+
+            if len(taxes) == 1:
+
+                account_invoice_tax = AccountInvoiceTax.search([
+                    ('name', '=', taxes.name)])
+
+                if account_invoice_tax:
+
+                    try:
+                        params['tax_lines'].append({
+                            'description': account_invoice_tax[0].name2,
+                            'amount': int(so.amount_tax * 100),
+                        })
+
+                    except:
+                        _logger.debug('The tax doesn not exist')
+                        pass
+            # TODO: Consider also orders that have more than one tax.
+
+        params['charges'] = [{
+            'status': 'pending_payment',
+            'payment_method': dict(),
+        }]
+
+        if acquirer == 'conekta':
+            params['card'] = request.session['conekta_token']
+
+        if acquirer == 'conekta_oxxo':
+            params['charges'][0]['payment_method']['type'] = 'oxxo_cash'
+        _logger.debug('DEBUG PARAMS %s', params)
         return params
 
     @http.route('/payment/conekta/charge', type='json',
@@ -88,9 +191,12 @@ class ConektaController(http.Controller):
             [('provider', '=', 'conekta')])
         conekta.api_key = conekta_acq.conekta_private_key
         params = self.create_params('conekta')
+
         try:
             response = conekta.Charge.create(params)
+
         except conekta.ConektaError as error:
             return error.message['message_to_purchaser']
         self.conekta_validate_data(response)
+
         return True

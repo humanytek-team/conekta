@@ -15,8 +15,10 @@
         "python": ["conekta"],
     },
     "depends": [
+        "account",
         "payment",
         "website_sale",
+        "website_sale_delivery",
     ],
     "data": [
         "security/security.xml",

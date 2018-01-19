@@ -17,12 +17,13 @@ _logger = logging.getLogger(__name__)
 class PaymentTransaction(models.Model):
     _inherit = 'payment.transaction'
 
-    conekta_oxxo_barcode = fields.Binary(string='Oxxo Barcode')
+    conekta_oxxo_reference = fields.Binary(string='Oxxo Reference')
     conekta_oxxo_expire_date = fields.Date(string="Oxxo expire date")
 
     @api.model
     def _conekta_oxxo_form_get_tx_from_data(self, data):
-        reference = data['reference_id']
+        _logger.debug('DEBUG form_get_tx_from_data %s', data.metadata)
+        reference = data['metadata']['reference']
         payment_tx = self.search([('reference', '=', reference)])
         if not payment_tx or len(payment_tx) > 1:
             error_msg = _(
@@ -37,14 +38,19 @@ class PaymentTransaction(models.Model):
 
     @api.model
     def _conekta_oxxo_form_validate(self, transaction, data):
+        _logger.debug('DEBUG payment method %s', dir(data))
+        _logger.debug('DEBUG payment method %s', dir(data.charges[0]))
+        _logger.debug('DEBUG payment method %s',
+                      dir(data.charges[0]['payment_method']))
+        _logger.debug('DEBUG REFERENCE %s', dir(
+            data.charges[0]['payment_method']['reference']))
         date = datetime.datetime.fromtimestamp(
-            int(data.payment_method['expires_at'])).strftime(
+            int(data.charges[0]['payment_method']['expires_at'])).strftime(
                 '%Y-%m-%d %H:%M:%S')
         data = {
             'acquirer_reference': data['id'],
             'state': 'pending',
-            'conekta_oxxo_barcode': base64.encodestring(
-                requests.get(data.payment_method['barcode_url']).content),
+            'conekta_oxxo_reference': data.charges[0]['payment_method']['reference'],
             'conekta_oxxo_expire_date': date,
         }
         transaction.write(data)

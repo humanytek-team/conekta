@@ -17,9 +17,11 @@ except (ImportError, IOError) as err:
 class ConektaOxxoController(ConektaController):
 
     def conekta_oxxo_validate_data(self, data):
+        _logger.debug('DEBUG VALIDATE DATA')
         res = False
         tx_obj = request.env['payment.transaction']
         res = tx_obj.sudo().form_feedback(data, 'conekta_oxxo')
+        _logger.debug('DEBUG VALIDATE DATA res %s', res)
         return res
 
     @http.route('/payment/conekta/oxxo/charge', type='json',
@@ -28,11 +30,18 @@ class ConektaOxxoController(ConektaController):
         payment_acquirer = request.env['payment.acquirer']
         conekta_acq = payment_acquirer.sudo().search(
             [('provider', '=', 'conekta')])
+        _logger.debug('DEBUG OXXO BEFORE PRIVATE KEY %s', conekta_acq)
         conekta.api_key = conekta_acq.conekta_private_key
+        conekta.api_version = '2.4.0'
         params = self.create_params('conekta_oxxo')
         try:
-            response = conekta.Charge.create(params)
+            _logger.debug('DEBUG BEFORE RESPONSE OXXO ORDER')
+            response = conekta.Order.create(params)
+            # TODO: Join conekta order id with order in Odoo
+            _logger.debug('DEBUG RESPONSE OXXO ORDER %s', response)
         except conekta.ConektaError as error:
+            _logger.debug('DEBUG CONEKTA ERROR %s, %s',
+                          error.message, type(error.message))
             return error.message['message_to_purchaser']
         self.conekta_oxxo_validate_data(response)
         return True
