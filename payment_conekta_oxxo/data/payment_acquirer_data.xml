@@ -11,7 +11,7 @@
             <field name="pre_msg"><![CDATA[
 <p>More information will be provided after choosing the payment method.</p>]]></field>
             <field name="pending_msg"><![CDATA[
-<p>Pending, Your order has been successfully processed. You have to print this order, take it to your nearest OXXO and use the barcode to make the payment. Note: Consider that OXXO will charge a fee for this transaction. Service provided by Conekta.</p>]]></field>
+<p>Pending, Your order has been successfully processed. You have to print this order, take it to your nearest OXXO and use the reference to make the payment. Note: Consider that OXXO will charge a fee for this transaction. Service provided by Conekta.</p>]]></field>
         </record>
     </data>
 </odoo>

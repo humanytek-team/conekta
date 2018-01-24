@@ -60,6 +60,7 @@ class ConektaController(http.Controller):
 
                     customer_data['shipping_contacts'].append({
                         "phone": delivery_address.phone,
+                        "email": delivery_address.email,
                         "receiver": delivery_address.name,
                         "address": {
                             "street1": delivery_address.street,
@@ -85,8 +86,7 @@ class ConektaController(http.Controller):
         params['metadata']['description'] = _(
             '%s Order %s' % (so.company_id.name, so.name)
         )
-        params['metadata']['reference'] = so.name
-        _logger.debug('DEBUG CURRENCY SALE ORDER %s', so.currency_id.name)
+        params['metadata']['order_name'] = so.name
         params['currency'] = so.currency_id.name
 
         params['line_items'] = []
@@ -126,13 +126,8 @@ class ConektaController(http.Controller):
         if so.partner_shipping_id:
 
             params['shipping_contact'] = dict()
-            _logger.debug('DEBUG SHIPPING CONTACT PHONE %s, %s',
-                          so.partner_shipping_id.phone, type(so.partner_shipping_id.phone))
-
             params['shipping_contact']["phone"] = so.partner_shipping_id.phone
-            _logger.debug('DEBUG SHIPPING CONTACT PHONE 2 %s, %s',
-                          params['shipping_contact']["phone"], type(params['shipping_contact']["phone"]))
-            _logger.debug('DEBUG RECEIVER %s', so.partner_shipping_id.name)
+            params['shipping_contact']["email"] = so.partner_shipping_id.email
             params['shipping_contact'][
                 "receiver"] = so.partner_shipping_id.name + ' test'
             params['shipping_contact']['address'] = {
@@ -165,7 +160,15 @@ class ConektaController(http.Controller):
                         })
 
                     except:
-                        _logger.debug('The tax doesn not exist')
+                        _logger.debug(
+                            'The tax doesn not exist searching by code name of SAT')
+
+                        if 'IVA' in account_invoice_tax[0].name:
+
+                            params['tax_lines'].append({
+                                'description': 'IVA',
+                                'amount': int(so.amount_tax * 100),
+                            })
                         pass
             # TODO: Consider also orders that have more than one tax.
 

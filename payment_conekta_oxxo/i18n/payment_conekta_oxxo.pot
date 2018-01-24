@@ -1,0 +1,100 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+#	* payment_conekta_oxxo
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 9.0e-20170815\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-01-24 08:27+0000\n"
+"PO-Revision-Date: 2018-01-24 08:27+0000\n"
+"Last-Translator: <>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: payment_conekta_oxxo
+#: code:addons/payment_conekta_oxxo/models/payment_transaction.py:34
+#, python-format
+msgid "; multiple order found"
+msgstr ""
+
+#. module: payment_conekta_oxxo
+#: code:addons/payment_conekta_oxxo/models/payment_transaction.py:32
+#, python-format
+msgid "; no order found"
+msgstr ""
+
+#. module: payment_conekta_oxxo
+#: model:payment.acquirer,cancel_msg:payment_conekta_oxxo.payment_acquirer_conekta_oxxo
+msgid "<span><i>Cancel,</i> Your payment has been cancelled.</span>"
+msgstr ""
+
+#. module: payment_conekta_oxxo
+#: model:payment.acquirer,done_msg:payment_conekta_oxxo.payment_acquirer_conekta_oxxo
+msgid "<span><i>Done,</i> Your online payment has been successfully processed. Thank you for your order.</span>"
+msgstr ""
+
+#. module: payment_conekta_oxxo
+#: model:payment.acquirer,error_msg:payment_conekta_oxxo.payment_acquirer_conekta_oxxo
+msgid "<span><i>Error,</i> Please be aware that an error occurred during the transaction. The order has been confirmed but won't be paid. Don't hesitate to contact us if you have any questions on the status of your order.</span>"
+msgstr ""
+
+#. module: payment_conekta_oxxo
+#: model:ir.ui.view,arch_db:payment_conekta_oxxo.sale_order_report_conekta_oxxo
+msgid "<strong>REFERENCIA</strong>"
+msgstr ""
+
+#. module: payment_conekta_oxxo
+#: code:addons/payment_conekta_oxxo/models/payment_transaction.py:29
+#, python-format
+msgid "Conekta: received data for reference %s"
+msgstr ""
+
+#. module: payment_conekta_oxxo
+#: model:ir.ui.view,arch_db:payment_conekta_oxxo.sale_order_report_conekta_oxxo
+msgid "Este codigo es valido hasta:"
+msgstr ""
+
+#. module: payment_conekta_oxxo
+#: model:payment.acquirer,pre_msg:payment_conekta_oxxo.payment_acquirer_conekta_oxxo
+msgid "More information will be provided after choosing the payment method."
+msgstr ""
+
+#. module: payment_conekta_oxxo
+#: model:payment.acquirer,name:payment_conekta_oxxo.payment_acquirer_conekta_oxxo
+msgid "Oxxo"
+msgstr ""
+
+#. module: payment_conekta_oxxo
+#: model:ir.model.fields,field_description:payment_conekta_oxxo.field_payment_transaction_conekta_oxxo_reference
+msgid "Oxxo Reference"
+msgstr ""
+
+#. module: payment_conekta_oxxo
+#: model:ir.model.fields,field_description:payment_conekta_oxxo.field_payment_transaction_conekta_oxxo_expire_date
+msgid "Oxxo expire date"
+msgstr ""
+
+#. module: payment_conekta_oxxo
+#: model:ir.model,name:payment_conekta_oxxo.model_payment_acquirer
+msgid "Payment Acquirer"
+msgstr ""
+
+#. module: payment_conekta_oxxo
+#: model:ir.model,name:payment_conekta_oxxo.model_payment_transaction
+msgid "Payment Transaction"
+msgstr ""
+
+#. module: payment_conekta_oxxo
+#: model:payment.acquirer,pending_msg:payment_conekta_oxxo.payment_acquirer_conekta_oxxo
+msgid "Pending, Your order has been successfully processed. You have to print this order, take it to your nearest OXXO and use the reference to make the payment. Note: Consider that OXXO will charge a fee for this transaction. Service provided by Conekta."
+msgstr ""
+
+#. module: payment_conekta_oxxo
+#: model:ir.model,name:payment_conekta_oxxo.model_webhook
+msgid "webhook"
+msgstr ""
+

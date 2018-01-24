@@ -23,7 +23,7 @@ class PaymentTransaction(models.Model):
     @api.model
     def _conekta_oxxo_form_get_tx_from_data(self, data):
         _logger.debug('DEBUG form_get_tx_from_data %s', data.metadata)
-        reference = data['metadata']['reference']
+        reference = data['metadata']['order_name']
         payment_tx = self.search([('reference', '=', reference)])
         if not payment_tx or len(payment_tx) > 1:
             error_msg = _(
